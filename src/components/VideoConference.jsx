@@ -13,13 +13,16 @@ function ChatBox() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    const receiveMessage = (payload, participant) => {
-      const text = new TextDecoder().decode(payload);
-      setMessages((prev) => [
-        ...prev,
-        `${participant?.identity || "User"}: ${text}`,
-      ]);
-    };
+    const receiveMessage = (payload, participant, kind, topic) => {
+  if (topic !== "chat") return;
+
+  const text = new TextDecoder().decode(payload);
+
+  setMessages((prev) => [
+    ...prev,
+    `${participant.identity}: ${text}`,
+  ]);
+};
 
     room.on("dataReceived", receiveMessage);
 
@@ -30,7 +33,13 @@ function ChatBox() {
     if (!message.trim()) return;
 
     const data = new TextEncoder().encode(message);
-    await room.localParticipant.publishData(data);
+    await room.localParticipant.publishData(
+  new TextEncoder().encode(message),
+  {
+    reliable: true,
+    topic: "chat",
+  }
+);
 
     setMessages((prev) => [...prev, `Me: ${message}`]);
     setMessage("");
